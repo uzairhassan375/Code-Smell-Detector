@@ -1,7 +1,19 @@
 /** @typedef {{ rule: string, lines: [number, number], message: string }} Violation */
 
-const IMPORT_REGEX =
+const JS_IMPORT_REGEX =
   /import\s+(?:(\w+)\s*,?\s*)?(?:\{([^}]+)\})?\s*from\s+['"][^'"]+['"]/g
+
+const CPP_INCLUDE_REGEX = /#include\s+[<"]([^>"]+)[>"]/g
+
+const CPP_HEADER_HINTS = {
+  fstream: ['fstream', 'ifstream', 'ofstream', 'fstream'],
+  algorithm: ['std::sort', 'std::find', 'std::copy', 'std::transform', 'algorithm'],
+  cmath: ['std::sqrt', 'std::pow', 'std::sin', 'std::cos', 'M_PI', 'cmath'],
+  map: ['std::map', 'map<'],
+  vector: ['std::vector', 'vector<'],
+  string: ['std::string', 'string'],
+  iostream: ['std::cout', 'std::cin', 'std::cerr', 'iostream'],
+}
 
 function getLineNumber(source, index) {
   return source.slice(0, index).split('\n').length
@@ -18,7 +30,11 @@ function isCommentLine(line) {
   return t.startsWith('//') || t.startsWith('/*') || t.startsWith('*')
 }
 
-function getImportBlockEnd(source) {
+function isCppSource(source) {
+  return /#include\s+[<"]/.test(source)
+}
+
+function getJsImportBlockEnd(source) {
   const lines = source.split('\n')
   let lastImportLine = 0
   for (let i = 0; i < lines.length; i++) {
@@ -37,6 +53,27 @@ function getImportBlockEnd(source) {
   }
   if (lastImportLine >= lines.length) return source.length
   return lineStarts[lastImportLine] ?? source.length
+}
+
+function getCppIncludeBlockEnd(source) {
+  const lines = source.split('\n')
+  let lastIncludeLine = 0
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim()
+    if (t.startsWith('#include')) {
+      lastIncludeLine = i + 1
+    } else if (lastIncludeLine > 0 && t && !t.startsWith('//')) {
+      break
+    }
+  }
+  const lineStarts = []
+  let pos = 0
+  for (const line of lines) {
+    lineStarts.push(pos)
+    pos += line.length + 1
+  }
+  if (lastIncludeLine >= lines.length) return source.length
+  return lineStarts[lastIncludeLine] ?? source.length
 }
 
 function extractImportNames(importStatement) {
@@ -73,15 +110,28 @@ function extractImportNames(importStatement) {
   return names
 }
 
-/** @returns {Violation[]} */
-export function detectUnusedImports(source) {
+function getHeaderKey(headerPath) {
+  const base = headerPath.split('/').pop() ?? headerPath
+  return base.replace(/\.(h|hpp|hh)$/, '')
+}
+
+function isCppHeaderUsed(headerPath, afterIncludes) {
+  const key = getHeaderKey(headerPath)
+  const hints = CPP_HEADER_HINTS[key]
+  if (hints) {
+    return hints.some((hint) => afterIncludes.includes(hint))
+  }
+  return afterIncludes.includes(key)
+}
+
+function detectUnusedJsImports(source) {
   const violations = []
-  const importEnd = getImportBlockEnd(source)
+  const importEnd = getJsImportBlockEnd(source)
   const afterImports = source.slice(importEnd)
 
   let match
-  IMPORT_REGEX.lastIndex = 0
-  while ((match = IMPORT_REGEX.exec(source)) !== null) {
+  JS_IMPORT_REGEX.lastIndex = 0
+  while ((match = JS_IMPORT_REGEX.exec(source)) !== null) {
     const statement = match[0]
     const line = getLineNumber(source, match.index)
     const names = extractImportNames(statement)
@@ -100,6 +150,35 @@ export function detectUnusedImports(source) {
     }
   }
   return violations
+}
+
+function detectUnusedCppIncludes(source) {
+  const violations = []
+  const includeEnd = getCppIncludeBlockEnd(source)
+  const afterIncludes = source.slice(includeEnd)
+
+  let match
+  CPP_INCLUDE_REGEX.lastIndex = 0
+  while ((match = CPP_INCLUDE_REGEX.exec(source)) !== null) {
+    const headerPath = match[1]
+    const line = getLineNumber(source, match.index)
+
+    if (!isCppHeaderUsed(headerPath, afterIncludes)) {
+      violations.push({
+        rule: 'Unused Imports',
+        lines: [line, line],
+        message: `'${headerPath}' is included but never referenced in this file.`,
+      })
+    }
+  }
+  return violations
+}
+
+/** @returns {Violation[]} */
+export function detectUnusedImports(source) {
+  return isCppSource(source)
+    ? detectUnusedCppIncludes(source)
+    : detectUnusedJsImports(source)
 }
 
 function countWordOccurrences(source, name) {
@@ -128,8 +207,7 @@ function isComponentUsedInJsx(source, name) {
   return new RegExp(`<${name}[\\s/>]`).test(source)
 }
 
-/** @returns {Violation[]} */
-export function detectDeadCode(source) {
+function detectJsDeadCode(source) {
   const violations = []
   const seen = new Set()
 
@@ -148,7 +226,7 @@ export function detectDeadCode(source) {
       violations.push({
         rule: 'Dead Code',
         lines: [line, line],
-        message: `Variable '${name}' is declared but never used.`,
+        message: `Variable ${name} is declared but never read anywhere in this file.`,
       })
     }
   }
@@ -170,12 +248,67 @@ export function detectDeadCode(source) {
       violations.push({
         rule: 'Dead Code',
         lines: [line, line],
-        message: `Function '${name}' is declared but never used.`,
+        message: `Function ${name} is declared but never called anywhere in this file.`,
       })
     }
   }
 
   return violations
+}
+
+function detectCppDeadCode(source) {
+  const violations = []
+  const seen = new Set()
+
+  const varRe =
+    /(?:std::\w+(?:\s*<[^>]*>)?|int|double|float|bool|auto)\s+(\w+)\s*=/g
+  let m
+  while ((m = varRe.exec(source)) !== null) {
+    const name = m[1]
+    const key = `var:${name}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const count = countWordOccurrences(source, name)
+    if (count === 1) {
+      const line = getLineNumber(source, m.index)
+      violations.push({
+        rule: 'Dead Code',
+        lines: [line, line],
+        message: `Variable ${name} is declared but never read anywhere in this file.`,
+      })
+    }
+  }
+
+  const fnRe =
+    /(?:void|int|double|bool|std::\w+)\s+(\w+)\s*\([^)]*\)\s*\{/g
+  while ((m = fnRe.exec(source)) !== null) {
+    const name = m[1]
+    if (name === 'main') continue
+
+    const key = `fn:${name}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const count = countWordOccurrences(source, name)
+    if (count === 1) {
+      const line = getLineNumber(source, m.index)
+      violations.push({
+        rule: 'Dead Code',
+        lines: [line, line],
+        message: `Function ${name} is declared but never called anywhere in this file.`,
+      })
+    }
+  }
+
+  return violations
+}
+
+/** @returns {Violation[]} */
+export function detectDeadCode(source) {
+  return isCppSource(source)
+    ? detectCppDeadCode(source)
+    : detectJsDeadCode(source)
 }
 
 function isInsideBlockComment(source, index) {
@@ -192,13 +325,17 @@ function isArrayIndexContext(line, matchIndex) {
 }
 
 function isConstDefinitionLine(line, num) {
-  return new RegExp(`^\\s*const\\s+\\w+\\s*=\\s*${num}\\s*[,;]?\\s*$`).test(
-    line.trim(),
-  )
+  return new RegExp(
+    `(?:^\\s*const\\s+\\w+\\s*=\\s*${num}|^\\s*(?:int|double|const\\s+int)\\s+\\w+\\s*=\\s*${num})\\s*[,;]?\\s*$`,
+  ).test(line.trim())
 }
 
-function isImportOrRequireLine(line) {
-  return /^\s*import\s/.test(line) || /\brequire\s*\(/.test(line)
+function isImportOrIncludeLine(line) {
+  return (
+    /^\s*import\s/.test(line) ||
+    /^\s*#include\s/.test(line) ||
+    /\brequire\s*\(/.test(line)
+  )
 }
 
 /** @returns {Violation[]} */
@@ -212,7 +349,7 @@ export function detectMagicNumbers(source) {
     const lineNum = i + 1
     let line = lines[i]
     if (isCommentLine(line)) continue
-    if (isImportOrRequireLine(line)) continue
+    if (isImportOrIncludeLine(line)) continue
 
     const cleaned = stripComments(line)
     if (!cleaned.trim()) continue
@@ -235,7 +372,10 @@ export function detectMagicNumbers(source) {
       violations.push({
         rule: 'Magic Numbers',
         lines: [lineNum, lineNum],
-        message: `Magic number '${num}' — replace with a named constant.`,
+        message:
+          Number(num) === 50
+            ? `Threshold ${num} repeats the same smell as nearby lines — pair both with shared constants.`
+            : `Threshold ${num} appears with no named meaning — extract to a constant for clarity.`,
       })
     }
   }
@@ -243,9 +383,7 @@ export function detectMagicNumbers(source) {
   return violations
 }
 
-function countClassMethods(body) {
-  const methodRe =
-    /(?:^\s*|\n\s*)(?:(?:static|async|get|set)\s+)*(\w+)\s*\([^)]*\)\s*\{/gm
+function countClassMethods(body, isCpp = false) {
   const keywords = new Set([
     'if',
     'for',
@@ -257,7 +395,13 @@ function countClassMethods(body) {
     'else',
     'do',
     'try',
+    'class',
   ])
+
+  const methodRe = isCpp
+    ? /(?:^\s*|\n\s*)(?:virtual\s+|static\s+|inline\s+)*(?:void|int|bool|double|std::\w+|\w+)\s+(\w+)\s*\([^;{]*\)\s*(?:const\s*)?(?:override\s*)?\{/gm
+    : /(?:^\s*|\n\s*)(?:(?:static|async|get|set)\s+)*(\w+)\s*\([^)]*\)\s*\{/gm
+
   let count = 0
   let m
   while ((m = methodRe.exec(body)) !== null) {
@@ -314,8 +458,10 @@ function extractClassBodies(source) {
 /** @returns {Violation[]} */
 export function detectLazyClass(source) {
   const violations = []
+  const isCpp = isCppSource(source)
+
   for (const { name, body, startLine, endLine } of extractClassBodies(source)) {
-    const methodCount = countClassMethods(body)
+    const methodCount = countClassMethods(body, isCpp)
     if (methodCount < 2) {
       violations.push({
         rule: 'Lazy Class',
@@ -371,8 +517,39 @@ function countDestructuredProps(source, fnIndex) {
   return propsMatch[1].split(',').filter((p) => p.trim()).length
 }
 
-/** @returns {Violation[]} */
-export function detectGodComponent(source) {
+function countCppMemberFields(body) {
+  const fieldRe =
+    /(?:^\s*|\n\s*)(?:int|double|float|bool|std::\w+(?:\s*<[^>]*>)?)\s+(\w+)\s*;/gm
+  return [...body.matchAll(fieldRe)].length
+}
+
+function detectCppGodClass(source) {
+  const violations = []
+
+  for (const { name, body, startLine, endLine } of extractClassBodies(source)) {
+    let score = 0
+    const bodyLines = body.split('\n').length
+    const methodCount = countClassMethods(body, true)
+    const fieldCount = countCppMemberFields(body)
+
+    if (bodyLines > 35) score++
+    if (methodCount > 6) score++
+    if (fieldCount > 5) score++
+    if (/fetch|sync|render|validate|write/i.test(body) && methodCount > 4) score++
+
+    if (score >= 2) {
+      violations.push({
+        rule: 'God Component',
+        lines: [startLine, endLine],
+        message: `Class '${name}' is a God Class (score: ${score}/4). Split into smaller, focused classes.`,
+      })
+    }
+  }
+
+  return violations
+}
+
+function detectJsGodComponent(source) {
   const violations = []
 
   for (const comp of extractComponentBodies(source)) {
@@ -403,6 +580,13 @@ export function detectGodComponent(source) {
   }
 
   return violations
+}
+
+/** @returns {Violation[]} */
+export function detectGodComponent(source) {
+  return isCppSource(source)
+    ? detectCppGodClass(source)
+    : detectJsGodComponent(source)
 }
 
 function normalizeWindow(text) {

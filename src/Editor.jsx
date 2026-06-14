@@ -7,7 +7,8 @@ import {
   useRef,
 } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
-import { javascript } from '@codemirror/lang-javascript'
+import { cpp } from '@codemirror/lang-cpp'
+import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView, Decoration, ViewPlugin } from '@codemirror/view'
 import { RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { getSmellColor } from './smellColors.js'
@@ -66,7 +67,7 @@ function violationHighlightExtension(lineRuleMap) {
       }
 
       update(update) {
-        if (update.docChanged) {
+        if (update.docChanged || update.viewportChanged) {
           this.decorations = buildViolationDecorations(
             update.view.state,
             this.lineRuleMap,
@@ -81,7 +82,14 @@ function violationHighlightExtension(lineRuleMap) {
 }
 
 const Editor = forwardRef(function Editor(
-  { value, onChange, lineRuleMap },
+  {
+    value,
+    onChange,
+    lineRuleMap,
+    filename = 'SOURCE.CPP',
+    readOnly = false,
+    compact = false,
+  },
   ref,
 ) {
   const viewRef = useRef(null)
@@ -132,36 +140,66 @@ const Editor = forwardRef(function Editor(
     [lineRuleMap],
   )
 
-  const extensions = useMemo(
-    () => [
-      javascript({ jsx: true }),
-      flashField,
-      violationHighlightExtension(lineRuleMap),
+  const extensions = useMemo(() => {
+    const base = [
+      cpp(),
+      oneDark,
       EditorView.theme({
-        '&': { height: '100%' },
+        '&': { height: '100%', backgroundColor: '#0d1117' },
         '.cm-scroller': {
           overflow: 'auto',
-          fontFamily: 'ui-monospace, Consolas, monospace',
+          fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace',
+          fontSize: '13px',
+          lineHeight: '1.6',
+        },
+        '.cm-gutters': {
+          backgroundColor: '#0d1117',
+          borderRight: '1px solid #21262d',
+        },
+        '.cm-activeLineGutter': {
+          backgroundColor: 'rgba(88, 166, 255, 0.06)',
+        },
+        '.cm-content': {
+          padding: '8px 0',
         },
       }),
-    ],
-    [mapKey, lineRuleMap],
-  )
+    ]
+
+    if (readOnly) {
+      base.push(EditorView.editable.of(false))
+    } else {
+      base.push(flashField, violationHighlightExtension(lineRuleMap))
+    }
+
+    return base
+  }, [mapKey, lineRuleMap, readOnly])
 
   return (
-    <div className="editor-wrap">
-      <CodeMirror
-        value={value}
-        height="100%"
-        extensions={extensions}
-        onChange={onChange}
-        onCreateEditor={onCreateEditor}
-        basicSetup={{
-          lineNumbers: true,
-          foldGutter: false,
-          highlightActiveLine: true,
-        }}
-      />
+    <div className={`code-window${compact ? ' code-window-compact' : ''}`}>
+      <div className="code-window-titlebar">
+        <div className="traffic-lights" aria-hidden="true">
+          <span className="dot dot-red" />
+          <span className="dot dot-yellow" />
+          <span className="dot dot-green" />
+        </div>
+        <span className="code-window-filename">{filename}</span>
+      </div>
+      <div className="editor-wrap">
+        <CodeMirror
+          value={value}
+          height="100%"
+          extensions={extensions}
+          onChange={readOnly ? undefined : onChange}
+          onCreateEditor={onCreateEditor}
+          editable={!readOnly}
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: false,
+            highlightActiveLine: !readOnly,
+            highlightActiveLineGutter: !readOnly,
+          }}
+        />
+      </div>
     </div>
   )
 })

@@ -1,70 +1,86 @@
-import { getSmellColor } from './smellColors.js'
+import { getSmellColor, RULE_TITLES } from './smellColors.js'
 
-function formatLinePill(lines) {
+function formatLineRef(lines) {
   const [start, end] = lines
-  if (start === end) return `Line ${start}`
-  return `Lines ${start}–${end}`
+  if (start === end) return `line ${start}`
+  return `lines ${start}–${end}`
 }
 
 export default function ViolationPanel({
   violations,
-  activeFilters,
   onViolationClick,
+  onRefactor,
+  refactoringKey,
 }) {
   const count = violations.length
 
   return (
     <aside className="violations-panel">
-      <h2 className="panel-label">Violations — {count} found</h2>
+      <div className="violations-header">
+        <h2 className="violations-title">Violations</h2>
+        <span className="violations-count">{count} found</span>
+      </div>
 
       <div className="violations-list">
         {count === 0 ? (
-          <p className="no-violations">No violations found</p>
+          <p className="no-violations">Run a scan to detect code smells</p>
         ) : (
           violations.map((v, index) => {
             const colors = getSmellColor(v.rule)
+            const cardKey = `${v.rule}-${v.lines[0]}-${v.lines[1]}-${index}`
+            const isRefactoring = refactoringKey === cardKey
+
             return (
-              <button
-                key={`${v.rule}-${v.lines[0]}-${index}`}
-                type="button"
+              <article
+                key={cardKey}
                 className="violation-card"
                 style={{
                   background: colors.bg,
                   borderColor: colors.border,
                 }}
-                onClick={() => onViolationClick(v.lines[0], v.rule)}
               >
-                <span
-                  className="line-pill"
+                <button
+                  type="button"
+                  className="violation-card-body"
+                  onClick={() => onViolationClick(v.lines[0], v.rule)}
+                >
+                  <div className="violation-card-top">
+                    <span className="violation-line-ref">{formatLineRef(v.lines)}</span>
+                    <span
+                      className="severity-badge"
+                      style={{
+                        background: colors.severityBg,
+                        color: colors.severityText,
+                      }}
+                    >
+                      {colors.severity}
+                    </span>
+                  </div>
+                  <h3 className="violation-rule-title" style={{ color: colors.text }}>
+                    {RULE_TITLES[v.rule] ?? v.rule}
+                  </h3>
+                  <p className="violation-message">{v.message}</p>
+                </button>
+
+                <button
+                  type="button"
+                  className="refactor-btn"
                   style={{
-                    background: colors.pillBg,
-                    color: colors.pillText,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  }}
+                  disabled={isRefactoring}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onRefactor?.(v, cardKey)
                   }}
                 >
-                  {formatLinePill(v.lines)}
-                </span>
-                <span className="rule-name" style={{ color: colors.text }}>
-                  {v.rule}
-                </span>
-                <p
-                  className="violation-message"
-                  style={{ color: colors.message }}
-                >
-                  {v.message}
-                </p>
-              </button>
+                  {isRefactoring ? 'Refactoring…' : '+ Fix with refactor'}
+                </button>
+              </article>
             )
           })
         )}
-      </div>
-
-      <div className="violations-summary">
-        <span className="summary-filters">
-          {activeFilters.length > 0
-            ? activeFilters.join(' · ')
-            : 'No filters'}
-        </span>
-        <span className="summary-count">{count} total</span>
       </div>
     </aside>
   )
