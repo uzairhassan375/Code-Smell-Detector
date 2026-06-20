@@ -1,3 +1,4 @@
+import SmellPieChart from './SmellPieChart.jsx'
 import { getSmellColor, RULE_TITLES } from './smellColors.js'
 
 function formatLineRef(lines) {
@@ -20,6 +21,8 @@ export default function ViolationPanel({
         <h2 className="violations-title">Violations</h2>
         <span className="violations-count">{count} found</span>
       </div>
+
+      <SmellPieChart violations={violations} />
 
       <div className="violations-list">
         {count === 0 ? (

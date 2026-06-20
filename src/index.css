@@ -397,6 +397,121 @@ body {
   color: #f85149;
 }
 
+/* ── Smell pie chart ── */
+
+.smell-chart {
+  flex-shrink: 0;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+}
+
+.smell-chart-empty {
+  padding: 20px 12px;
+  text-align: center;
+}
+
+.smell-chart-empty-text {
+  margin: 0;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.smell-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.smell-chart-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b949e;
+}
+
+.smell-chart-total {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c9d1d9;
+}
+
+.smell-chart-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.smell-chart-pie-wrap {
+  flex-shrink: 0;
+}
+
+.smell-chart-pie {
+  width: 120px;
+  height: 120px;
+  display: block;
+}
+
+.smell-chart-center-value {
+  fill: #f0f6fc;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.smell-chart-center-label {
+  fill: #8b949e;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.smell-chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smell-chart-legend-item {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.smell-chart-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.smell-chart-legend-label {
+  color: #c9d1d9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smell-chart-legend-pct {
+  font-weight: 700;
+  color: #f0f6fc;
+  font-variant-numeric: tabular-nums;
+}
+
 .violations-list {
   flex: 1;
   overflow-y: auto;
