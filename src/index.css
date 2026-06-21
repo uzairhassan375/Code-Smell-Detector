@@ -13,8 +13,8 @@ body,
 
 body {
   font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: #0d1117;
-  color: #c9d1d9;
+  background: #0B0D12;
+  color: #D8DBE3;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -30,7 +30,7 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  background: #0d1117;
+  background: #0B0D12;
 }
 
 /* ── Header ── */
@@ -38,8 +38,8 @@ body {
 .top-bar {
   flex-shrink: 0;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #21262d;
-  background: #0d1117;
+  border-bottom: 1px solid #262A33;
+  background: #0B0D12;
 }
 
 .top-bar-main {
@@ -60,14 +60,14 @@ body {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #f0f6fc;
+  color: #FFFFFF;
   letter-spacing: -0.02em;
 }
 
 .app-subtitle {
   margin: 4px 0 0;
   font-size: 14px;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .scan-btn {
@@ -78,16 +78,16 @@ body {
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
-  background: #1f6feb;
-  border: 1px solid rgba(240, 246, 252, 0.1);
+  color: #FFFFFF;
+  background: #3B7DDB;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .scan-btn:hover {
-  background: #388bfd;
+  background: #4A8AE4;
 }
 
 .filter-pills {
@@ -104,9 +104,9 @@ body {
   padding: 7px 16px;
   border-radius: 99px;
   cursor: pointer;
-  border: 1.5px solid #30363d;
-  background: #161b22;
-  color: #6e7681;
+  border: 1.5px solid var(--pill-border, #3A3E48);
+  background: var(--pill-bg, #1A1D24);
+  color: var(--pill-text, #9CA1AC);
   font-weight: 500;
   transition:
     background 0.15s,
@@ -117,14 +117,9 @@ body {
     transform 0.15s;
 }
 
-.filter-pill:not(.active) {
-  opacity: 0.55;
-}
-
 .filter-pill:hover {
   border-color: #484f58;
-  color: #c9d1d9;
-  opacity: 1;
+  color: #D8DBE3;
 }
 
 .filter-pill.active {
@@ -132,7 +127,6 @@ body {
   color: var(--pill-text);
   border-color: var(--pill-accent);
   font-weight: 700;
-  opacity: 1;
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--pill-accent) 35%, transparent),
     0 0 14px color-mix(in srgb, var(--pill-accent) 30%, transparent),
@@ -199,10 +193,10 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid #30363d;
+  border: 1px solid #262A33;
   border-radius: 12px;
   overflow: hidden;
-  background: #0d1117;
+  background: #161922;
 }
 
 .code-window-compact {
@@ -214,41 +208,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   padding: 10px 16px;
-  background: #161b22;
-  border-bottom: 1px solid #21262d;
-}
-
-.traffic-lights {
-  position: absolute;
-  left: 14px;
-  display: flex;
-  gap: 7px;
-}
-
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-}
-
-.dot-red {
-  background: #ff5f57;
-}
-
-.dot-yellow {
-  background: #febc2e;
-}
-
-.dot-green {
-  background: #28c840;
+  background: #161922;
+  border-bottom: 1px solid #262A33;
 }
 
 .code-window-filename {
   font-size: 12px;
   font-weight: 600;
-  color: #8b949e;
+  color: #A8ADB8;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -259,6 +227,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  background: #161922;
 }
 
 .editor-wrap > div {
@@ -269,12 +238,13 @@ body {
 
 .editor-wrap .cm-editor {
   height: 100%;
+  background: #161922 !important;
 }
 
 .editor-wrap .cm-scroller {
   overflow: auto !important;
   scrollbar-width: thin;
-  scrollbar-color: #484f58 #0d1117;
+  scrollbar-color: #484f58 #161922;
 }
 
 .editor-wrap .cm-scroller::-webkit-scrollbar {
@@ -283,7 +253,7 @@ body {
 }
 
 .editor-wrap .cm-scroller::-webkit-scrollbar-track {
-  background: #0d1117;
+  background: #161922;
 }
 
 .editor-wrap .cm-scroller::-webkit-scrollbar-thumb {
@@ -291,75 +261,88 @@ body {
   border-radius: 4px;
 }
 
+.editor-wrap .cm-content,
+.editor-wrap .cm-line {
+  color: #F0F2F5;
+}
+
 /* ── Violation line highlights ── */
 
 .cm-violation-line {
-  border-left: 3px solid;
+  border-left-style: solid;
+  border-left-width: 5px;
 }
 
 .cm-violation-dead-code {
-  background: rgba(248, 81, 73, 0.1) !important;
-  border-left-color: #f85149 !important;
+  background: rgba(122, 36, 36, 0.55) !important;
+  border-left-color: #FF7070 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 112, 112, 0.3);
 }
 
 .cm-violation-magic-numbers {
-  background: rgba(210, 153, 34, 0.1) !important;
-  border-left-color: #d29922 !important;
+  background: rgba(120, 72, 16, 0.55) !important;
+  border-left-color: #FFBE4D !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 190, 77, 0.3);
 }
 
 .cm-violation-lazy-class {
-  background: rgba(88, 166, 255, 0.1) !important;
-  border-left-color: #58a6ff !important;
+  background: rgba(30, 64, 120, 0.55) !important;
+  border-left-color: #7AB8FF !important;
+  box-shadow: inset 0 0 0 1px rgba(122, 184, 255, 0.3);
 }
 
 .cm-violation-god-component {
-  background: rgba(188, 140, 255, 0.1) !important;
-  border-left-color: #bc8cff !important;
+  background: rgba(88, 40, 160, 0.55) !important;
+  border-left-color: #C084FF !important;
+  box-shadow: inset 0 0 0 1px rgba(192, 132, 255, 0.3);
 }
 
 .cm-violation-copy-paste {
-  background: rgba(247, 120, 186, 0.1) !important;
-  border-left-color: #f778ba !important;
+  background: rgba(140, 32, 96, 0.55) !important;
+  border-left-color: #FF8CC8 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 200, 0.3);
 }
 
 .cm-violation-unused-imports {
-  background: rgba(88, 166, 255, 0.1) !important;
-  border-left-color: #58a6ff !important;
+  background: rgba(30, 64, 120, 0.55) !important;
+  border-left-color: #7AB8FF !important;
+  box-shadow: inset 0 0 0 1px rgba(122, 184, 255, 0.3);
 }
 
 .cm-flash-line {
-  border-left: 3px solid;
+  border-left-style: solid;
+  border-left-width: 5px;
   transition: background 0.3s;
 }
 
 .cm-flash-dead-code {
-  background: rgba(248, 81, 73, 0.22) !important;
-  border-left-color: #f85149 !important;
+  background: rgba(140, 40, 40, 0.72) !important;
+  border-left-color: #FF9090 !important;
 }
 
 .cm-flash-magic-numbers {
-  background: rgba(210, 153, 34, 0.22) !important;
-  border-left-color: #d29922 !important;
+  background: rgba(140, 96, 24, 0.72) !important;
+  border-left-color: #FFD080 !important;
 }
 
 .cm-flash-lazy-class {
-  background: rgba(88, 166, 255, 0.22) !important;
-  border-left-color: #58a6ff !important;
+  background: rgba(36, 72, 130, 0.72) !important;
+  border-left-color: #99C8FF !important;
 }
 
 .cm-flash-god-component {
-  background: rgba(188, 140, 255, 0.22) !important;
-  border-left-color: #bc8cff !important;
+  background: rgba(100, 48, 170, 0.72) !important;
+  border-left-color: #D8B4FE !important;
 }
 
 .cm-flash-copy-paste {
-  background: rgba(247, 120, 186, 0.22) !important;
-  border-left-color: #f778ba !important;
+  background: rgba(160, 40, 110, 0.72) !important;
+  border-left-color: #FFB0DC !important;
 }
 
 .cm-flash-unused-imports {
-  background: rgba(88, 166, 255, 0.22) !important;
-  border-left-color: #58a6ff !important;
+  background: rgba(36, 72, 130, 0.72) !important;
+  border-left-color: #99C8FF !important;
 }
 
 /* ── Violations panel ── */
@@ -370,8 +353,8 @@ body {
   display: flex;
   flex-direction: column;
   padding: 16px 20px 16px 0;
-  background: #0d1117;
-  border-left: 1px solid #21262d;
+  background: #0B0D12;
+  border-left: 1px solid #262A33;
 }
 
 .violations-header {
@@ -388,13 +371,13 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .violations-count {
   font-size: 13px;
   font-weight: 600;
-  color: #f85149;
+  color: #F09595;
 }
 
 /* ── Smell pie chart ── */
@@ -403,8 +386,8 @@ body {
   flex-shrink: 0;
   margin-bottom: 14px;
   padding: 12px;
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: #11141B;
+  border: 1px solid #262A33;
   border-radius: 10px;
 }
 
@@ -416,7 +399,7 @@ body {
 .smell-chart-empty-text {
   margin: 0;
   font-size: 12px;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .smell-chart-header {
@@ -432,13 +415,13 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .smell-chart-total {
   font-size: 11px;
   font-weight: 600;
-  color: #c9d1d9;
+  color: #D8DBE3;
 }
 
 .smell-chart-body {
@@ -458,14 +441,14 @@ body {
 }
 
 .smell-chart-center-value {
-  fill: #f0f6fc;
+  fill: #FFFFFF;
   font-size: 16px;
   font-weight: 700;
   font-family: 'Inter', system-ui, sans-serif;
 }
 
 .smell-chart-center-label {
-  fill: #8b949e;
+  fill: #A8ADB8;
   font-size: 9px;
   font-weight: 600;
   font-family: 'Inter', system-ui, sans-serif;
@@ -500,7 +483,7 @@ body {
 }
 
 .smell-chart-legend-label {
-  color: #c9d1d9;
+  color: #D8DBE3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -508,7 +491,7 @@ body {
 
 .smell-chart-legend-pct {
   font-weight: 700;
-  color: #f0f6fc;
+  color: #FFFFFF;
   font-variant-numeric: tabular-nums;
 }
 
@@ -524,9 +507,9 @@ body {
   margin: 24px 0;
   padding: 16px;
   text-align: center;
-  color: #8b949e;
-  background: #161b22;
-  border: 1px dashed #30363d;
+  color: #A8ADB8;
+  background: #11141B;
+  border: 1px dashed #262A33;
   border-radius: 10px;
   font-size: 13px;
 }
@@ -564,14 +547,14 @@ body {
 
 .violation-line-ref {
   font-size: 12px;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .severity-badge {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 4px;
 }
 
@@ -585,7 +568,7 @@ body {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .refactor-btn {
@@ -595,15 +578,13 @@ body {
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 600;
-  background: transparent;
-  border: 1px solid;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, opacity 0.15s;
 }
 
-.refactor-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
+.refactor-btn:hover:not(:disabled) {
+  opacity: 0.92;
 }
 
 .refactor-btn:disabled {
@@ -615,9 +596,9 @@ body {
 
 .refactor-preview-panel {
   flex-shrink: 0;
-  border: 1px solid #30363d;
+  border: 1px solid #262A33;
   border-radius: 12px;
-  background: #161b22;
+  background: #11141B;
   padding: 14px 16px 16px;
 }
 
@@ -635,19 +616,20 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .refactor-preview-title {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
+  color: #FFFFFF;
 }
 
 .refactor-preview-lines {
   font-size: 13px;
   font-weight: 500;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .refactor-close-btn {
@@ -655,21 +637,21 @@ body {
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #c9d1d9;
-  background: #21262d;
-  border: 1px solid #30363d;
+  color: #D8DBE3;
+  background: #161922;
+  border: 1px solid #262A33;
   border-radius: 6px;
   cursor: pointer;
 }
 
 .refactor-close-btn:hover {
-  background: #30363d;
+  background: #1A1D24;
 }
 
 .refactor-preview-note {
   margin: 0 0 12px;
   font-size: 12px;
-  color: #8b949e;
+  color: #A8ADB8;
   line-height: 1.5;
 }
 
@@ -683,22 +665,22 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #58a6ff;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
+  color: #7FB3F5;
+  background: rgba(55, 138, 221, 0.12);
+  border: 1px solid #2F66A8;
 }
 
 .refactor-status-error {
-  color: #ff7b72;
-  background: rgba(248, 81, 73, 0.08);
-  border: 1px solid rgba(248, 81, 73, 0.25);
+  color: #FBD3D3;
+  background: #7A2424;
+  border: 1px solid #8C2F2F;
 }
 
 .refactor-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(88, 166, 255, 0.25);
-  border-top-color: #58a6ff;
+  border: 2px solid rgba(127, 179, 245, 0.25);
+  border-top-color: #7FB3F5;
   border-radius: 50%;
   animation: refactor-spin 0.8s linear infinite;
 }
@@ -725,11 +707,11 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #8b949e;
+  color: #A8ADB8;
 }
 
 .refactor-column-label-fixed {
-  color: #3fb950;
+  color: #85B7EB;
 }
 
 @media (max-width: 960px) {
@@ -740,7 +722,7 @@ body {
   .violations-panel {
     width: 100%;
     border-left: none;
-    border-top: 1px solid #21262d;
+    border-top: 1px solid #262A33;
     max-height: 40vh;
     padding: 16px 24px;
   }

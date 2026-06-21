@@ -17,7 +17,7 @@ export function computeSmellBreakdown(violations) {
       label: FILTER_LABELS[rule] ?? rule,
       count,
       percentage: Math.round((count / total) * 1000) / 10,
-      color: getSmellColor(rule).accent,
+      color: getSmellColor(rule).chartFill,
     }))
     .sort((a, b) => b.count - a.count)
 }

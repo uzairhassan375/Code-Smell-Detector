@@ -82,7 +82,7 @@ export default function SmellPieChart({ violations }) {
                 key={slice.rule}
                 d={describeSlice(slice.startAngle, slice.endAngle)}
                 fill={slice.color}
-                stroke="#0d1117"
+                stroke="#0B0D12"
                 strokeWidth="2"
               />
             ))}
@@ -90,7 +90,7 @@ export default function SmellPieChart({ violations }) {
               cx={CENTER}
               cy={CENTER}
               r={32}
-              fill="#161b22"
+              fill="#11141B"
             />
             <text
               x={CENTER}
@@ -117,9 +117,12 @@ export default function SmellPieChart({ violations }) {
               <span
                 className="smell-chart-legend-dot"
                 style={{ background: item.color }}
+                aria-hidden="true"
               />
               <span className="smell-chart-legend-label">{item.label}</span>
-              <span className="smell-chart-legend-pct">{item.percentage}%</span>
+              <span className="smell-chart-legend-pct" style={{ color: '#FFFFFF' }}>
+                {item.percentage}%
+              </span>
             </li>
           ))}
         </ul>

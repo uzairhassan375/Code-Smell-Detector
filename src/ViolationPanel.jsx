@@ -1,5 +1,5 @@
 import SmellPieChart from './SmellPieChart.jsx'
-import { getSmellColor, RULE_TITLES } from './smellColors.js'
+import { getSeverityStyle, getSmellColor, RULE_TITLES } from './smellColors.js'
 
 function formatLineRef(lines) {
   const [start, end] = lines
@@ -30,6 +30,7 @@ export default function ViolationPanel({
         ) : (
           violations.map((v, index) => {
             const colors = getSmellColor(v.rule)
+            const severity = getSeverityStyle(colors.severity)
             const cardKey = `${v.rule}-${v.lines[0]}-${v.lines[1]}-${index}`
             const isRefactoring = refactoringKey === cardKey
 
@@ -39,7 +40,8 @@ export default function ViolationPanel({
                 className="violation-card"
                 style={{
                   background: colors.bg,
-                  borderColor: colors.border,
+                  borderColor: severity.cardBorder,
+                  borderWidth: severity.cardBorderWidth,
                 }}
               >
                 <button
@@ -52,8 +54,8 @@ export default function ViolationPanel({
                     <span
                       className="severity-badge"
                       style={{
-                        background: colors.severityBg,
-                        color: colors.severityText,
+                        background: severity.badgeBg,
+                        color: severity.badgeText,
                       }}
                     >
                       {colors.severity}
@@ -69,8 +71,10 @@ export default function ViolationPanel({
                   type="button"
                   className="refactor-btn"
                   style={{
-                    borderColor: colors.border,
-                    color: colors.text,
+                    background: severity.refactorBg,
+                    borderColor: severity.refactorBorder,
+                    color: severity.refactorText,
+                    borderWidth: colors.severity === 'HIGH' ? '0' : '1px',
                   }}
                   disabled={isRefactoring}
                   onClick={(event) => {

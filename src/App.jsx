@@ -6,7 +6,7 @@ import {
   buildLineRuleMap,
   runDetectors,
 } from './detectors.js'
-import { FILTER_LABELS, getSmellColor } from './smellColors.js'
+import { FILTER_LABELS, INACTIVE_FILTER, getSmellColor } from './smellColors.js'
 import { groupViolationsForDisplay } from './groupViolations.js'
 import { SAMPLE_CODE, SAMPLE_FILENAME } from './sampleCode.js'
 import RefactorPreview from './RefactorPreview.jsx'
@@ -33,10 +33,10 @@ function ScanIcon() {
 function LogoIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-      <rect x="2" y="2" width="18" height="18" rx="4" stroke="#58a6ff" strokeWidth="1.5" />
+      <rect x="2" y="2" width="18" height="18" rx="4" stroke="#378ADD" strokeWidth="1.5" />
       <path
         d="M7 8h8M7 11h5M7 14h8"
-        stroke="#58a6ff"
+        stroke="#378ADD"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
@@ -166,16 +166,25 @@ function App() {
                     ? {
                         '--pill-accent': colors.accent,
                         '--pill-bg': colors.pillBg,
-                        '--pill-border': colors.border,
+                        '--pill-border': colors.accent,
                         '--pill-text': colors.pillText,
+                        '--pill-dot': colors.dot,
                       }
-                    : undefined
+                    : {
+                        '--pill-accent': INACTIVE_FILTER.accent,
+                        '--pill-bg': INACTIVE_FILTER.bg,
+                        '--pill-border': INACTIVE_FILTER.border,
+                        '--pill-text': INACTIVE_FILTER.text,
+                        '--pill-dot': INACTIVE_FILTER.dot,
+                      }
                 }
                 onClick={() => toggleFilter(filter)}
               >
                 <span
                   className="filter-dot"
-                  style={{ background: colors.accent }}
+                  style={{
+                    background: isActive ? colors.dot : INACTIVE_FILTER.dot,
+                  }}
                 />
                 {FILTER_LABELS[filter] ?? filter}
               </button>
