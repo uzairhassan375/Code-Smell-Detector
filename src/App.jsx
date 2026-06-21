@@ -71,9 +71,34 @@ function ThemeIcon({ theme }) {
   )
 }
 
+function UploadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 2.5v7M5.5 5 8 2.5 10.5 5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3 10.5v1.5A1.5 1.5 0 0 0 4.5 13.5h7A1.5 1.5 0 0 0 13 12v-1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+const UPLOAD_ACCEPT = '.cpp,.cxx,.cc,.c,.h,.hpp,.js,.jsx,.ts,.tsx,.txt'
+const MAX_UPLOAD_BYTES = 512 * 1024
+
 function App() {
   const [theme, setTheme] = useState(getInitialTheme)
   const [code, setCode] = useState(SAMPLE_CODE)
+  const [filename, setFilename] = useState(SAMPLE_FILENAME)
+  const [isSampleActive, setIsSampleActive] = useState(true)
   const [activeFilters, setActiveFilters] = useState([...FILTER_OPTIONS])
   const [violations, setViolations] = useState([])
   const [lineRuleMap, setLineRuleMap] = useState(() => new Map())
@@ -81,6 +106,7 @@ function App() {
   const [refactorState, setRefactorState] = useState(null)
   const [refactoringKey, setRefactoringKey] = useState(null)
   const editorRef = useRef(null)
+  const fileInputRef = useRef(null)
   const emptyLineMap = useMemo(() => new Map(), [])
   const inactiveFilter = useMemo(() => getInactiveFilter(theme), [theme])
 
@@ -124,9 +150,50 @@ function App() {
 
   const handleCodeChange = useCallback((newCode) => {
     setCode(newCode)
+    setIsSampleActive(newCode === SAMPLE_CODE)
     clearScanResults()
     setRefactorState(null)
   }, [clearScanResults])
+
+  const handleLoadSample = useCallback(() => {
+    setCode(SAMPLE_CODE)
+    setFilename(SAMPLE_FILENAME)
+    setIsSampleActive(true)
+    clearScanResults()
+    setRefactorState(null)
+  }, [clearScanResults])
+
+  const handleUploadClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback(
+    (event) => {
+      const file = event.target.files?.[0]
+      event.target.value = ''
+      if (!file) return
+
+      if (file.size > MAX_UPLOAD_BYTES) {
+        window.alert('File is too large. Please upload a file under 512 KB.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        const text = typeof reader.result === 'string' ? reader.result : ''
+        setCode(text)
+        setFilename(file.name.toUpperCase())
+        setIsSampleActive(false)
+        clearScanResults()
+        setRefactorState(null)
+      }
+      reader.onerror = () => {
+        window.alert('Could not read that file. Please try another one.')
+      }
+      reader.readAsText(file)
+    },
+    [clearScanResults],
+  )
 
   const handleViolationClick = useCallback((line, rule) => {
     editorRef.current?.scrollToLine(line, rule)
@@ -185,6 +252,29 @@ function App() {
             </div>
           </div>
           <div className="header-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={UPLOAD_ACCEPT}
+              className="file-input-hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={handleUploadClick}
+            >
+              <UploadIcon />
+              Upload file
+            </button>
+            <button
+              type="button"
+              className={`theme-toggle-btn${isSampleActive ? ' is-active' : ''}`}
+              onClick={handleLoadSample}
+              disabled={isSampleActive}
+            >
+              Sample code
+            </button>
             <button
               type="button"
               className="theme-toggle-btn"
@@ -251,7 +341,7 @@ function App() {
               value={code}
               onChange={handleCodeChange}
               lineRuleMap={hasScanned ? lineRuleMap : emptyLineMap}
-              filename={SAMPLE_FILENAME}
+              filename={filename}
               theme={theme}
             />
 

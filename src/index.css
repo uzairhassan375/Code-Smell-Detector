@@ -130,8 +130,18 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 
-.theme-toggle-btn:hover {
+.theme-toggle-btn:hover:not(:disabled) {
   background: var(--btn-secondary-hover);
+}
+
+.theme-toggle-btn:disabled,
+.theme-toggle-btn.is-active:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.file-input-hidden {
+  display: none;
 }
 
 .scan-btn {
@@ -150,8 +160,13 @@ body {
   transition: background 0.15s;
 }
 
-.scan-btn:hover {
+.scan-btn:hover:not(:disabled) {
   background: var(--btn-primary-hover);
+}
+
+.scan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .filter-pills {
