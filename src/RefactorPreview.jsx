@@ -7,7 +7,7 @@ function formatLineRef(lines) {
   return `lines ${start}–${end}`
 }
 
-export default function RefactorPreview({ refactorState, onClose }) {
+export default function RefactorPreview({ refactorState, onClose, theme = 'dark' }) {
   if (!refactorState) return null
 
   const { violation, status, originalSnippet, refactoredSnippet, error } =
@@ -15,11 +15,24 @@ export default function RefactorPreview({ refactorState, onClose }) {
   const colors = getSmellColor(violation.rule)
 
   return (
-    <section className="refactor-preview-panel">
+    <section
+      className="refactor-preview-panel"
+      style={
+        theme === 'light'
+          ? {
+              background: colors.pillBg,
+              borderColor: colors.accent,
+            }
+          : undefined
+      }
+    >
       <div className="refactor-preview-header">
         <div>
           <p className="refactor-preview-label">Refactored preview</p>
-          <h3 className="refactor-preview-title" style={{ color: colors.text }}>
+          <h3
+            className="refactor-preview-title"
+            style={{ color: theme === 'light' ? '#111827' : colors.text }}
+          >
             {RULE_TITLES[violation.rule] ?? violation.rule}
             <span className="refactor-preview-lines">
               {' '}
@@ -32,15 +45,13 @@ export default function RefactorPreview({ refactorState, onClose }) {
         </button>
       </div>
 
-      <p className="refactor-preview-note">
-        Original source is unchanged. This preview shows a Groq-suggested fix
-        for the selected smell only.
-      </p>
-
       {status === 'loading' && (
-        <div className="refactor-status refactor-status-loading">
+        <div
+          className="refactor-status refactor-status-loading"
+          aria-busy="true"
+          aria-label="Generating refactor"
+        >
           <span className="refactor-spinner" aria-hidden="true" />
-          Generating refactor with Groq…
         </div>
       )}
 
@@ -58,6 +69,7 @@ export default function RefactorPreview({ refactorState, onClose }) {
               compact
               filename="ORIGINAL.CPP"
               lineRuleMap={new Map()}
+              theme={theme}
             />
           </div>
           <div className="refactor-preview-column">
@@ -70,6 +82,7 @@ export default function RefactorPreview({ refactorState, onClose }) {
               compact
               filename="REFACTORED.CPP"
               lineRuleMap={new Map()}
+              theme={theme}
             />
           </div>
         </div>

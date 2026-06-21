@@ -12,6 +12,7 @@ export default function ViolationPanel({
   onViolationClick,
   onRefactor,
   refactoringKey,
+  theme = 'dark',
 }) {
   const count = violations.length
 
@@ -22,7 +23,7 @@ export default function ViolationPanel({
         <span className="violations-count">{count} found</span>
       </div>
 
-      <SmellPieChart violations={violations} />
+      <SmellPieChart violations={violations} theme={theme} />
 
       <div className="violations-list">
         {count === 0 ? (
@@ -39,7 +40,6 @@ export default function ViolationPanel({
                 key={cardKey}
                 className="violation-card"
                 style={{
-                  background: colors.bg,
                   borderColor: severity.cardBorder,
                   borderWidth: severity.cardBorderWidth,
                 }}
@@ -61,7 +61,10 @@ export default function ViolationPanel({
                       {colors.severity}
                     </span>
                   </div>
-                  <h3 className="violation-rule-title" style={{ color: colors.text }}>
+                  <h3
+                    className="violation-rule-title"
+                    style={{ color: theme === 'light' ? '#111827' : colors.text }}
+                  >
                     {RULE_TITLES[v.rule] ?? v.rule}
                   </h3>
                   <p className="violation-message">{v.message}</p>
@@ -70,12 +73,21 @@ export default function ViolationPanel({
                 <button
                   type="button"
                   className="refactor-btn"
-                  style={{
-                    background: severity.refactorBg,
-                    borderColor: severity.refactorBorder,
-                    color: severity.refactorText,
-                    borderWidth: colors.severity === 'HIGH' ? '0' : '1px',
-                  }}
+                  style={
+                    theme === 'light'
+                      ? {
+                          background: colors.pillBg,
+                          borderColor: colors.accent,
+                          color: colors.accent,
+                          borderWidth: '1px',
+                        }
+                      : {
+                          background: severity.refactorBg,
+                          borderColor: severity.refactorBorder,
+                          color: severity.refactorText,
+                          borderWidth: colors.severity === 'HIGH' ? '0' : '1px',
+                        }
+                  }
                   disabled={isRefactoring}
                   onClick={(event) => {
                     event.stopPropagation()

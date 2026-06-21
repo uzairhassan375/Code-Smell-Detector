@@ -34,7 +34,11 @@ function describeSlice(startAngle, endAngle) {
   ].join(' ')
 }
 
-export default function SmellPieChart({ violations }) {
+export default function SmellPieChart({ violations, theme = 'dark' }) {
+  const isLight = theme === 'light'
+  const sliceStroke = isLight ? '#ECEEF2' : '#0B0D12'
+  const centerFill = isLight ? '#FFFFFF' : '#11141B'
+
   const breakdown = useMemo(
     () => computeSmellBreakdown(violations),
     [violations],
@@ -82,7 +86,7 @@ export default function SmellPieChart({ violations }) {
                 key={slice.rule}
                 d={describeSlice(slice.startAngle, slice.endAngle)}
                 fill={slice.color}
-                stroke="#0B0D12"
+                stroke={sliceStroke}
                 strokeWidth="2"
               />
             ))}
@@ -90,7 +94,7 @@ export default function SmellPieChart({ violations }) {
               cx={CENTER}
               cy={CENTER}
               r={32}
-              fill="#11141B"
+              fill={centerFill}
             />
             <text
               x={CENTER}
@@ -120,9 +124,7 @@ export default function SmellPieChart({ violations }) {
                 aria-hidden="true"
               />
               <span className="smell-chart-legend-label">{item.label}</span>
-              <span className="smell-chart-legend-pct" style={{ color: '#FFFFFF' }}>
-                {item.percentage}%
-              </span>
+              <span className="smell-chart-legend-pct">{item.percentage}%</span>
             </li>
           ))}
         </ul>

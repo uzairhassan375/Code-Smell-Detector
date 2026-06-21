@@ -541,7 +541,8 @@ function detectCppGodClass(source) {
       violations.push({
         rule: 'God Component',
         lines: [startLine, endLine],
-        message: `Class '${name}' is a God Class (score: ${score}/4). Split into smaller, focused classes.`,
+        message:
+          'It\'s a God Component because it handles too many unrelated responsibilities in one class, violating single responsibility.',
       })
     }
   }
@@ -574,7 +575,8 @@ function detectJsGodComponent(source) {
       violations.push({
         rule: 'God Component',
         lines: [startLine, endLine],
-        message: `Component '${name}' is a God Component (score: ${score}/4). Split into smaller components.`,
+        message:
+          'It\'s a God Component because it handles too many unrelated responsibilities in one component, violating single responsibility.',
       })
     }
   }
@@ -589,64 +591,127 @@ export function detectGodComponent(source) {
     : detectJsGodComponent(source)
 }
 
-function normalizeWindow(text) {
-  return text
+function normalizeFunctionBody(body) {
+  return body
+    .split('\n')
+    .map((line) => stripComments(line))
+    .filter((line) => line.trim() && !isCommentLine(line))
+    .map((line) => line.replace(/\b\w+\b/g, 'TOKEN'))
+    .join('\n')
     .replace(/\s+/g, ' ')
-    .replace(/\b\w+\b/g, 'TOKEN')
     .trim()
 }
 
-function isSignificantLine(line) {
-  const t = line.trim()
-  if (!t) return false
-  if (isCommentLine(line)) return false
-  return true
+function findBraceClose(lines, openLineIdx) {
+  let depth = 0
+  for (let i = openLineIdx; i < lines.length; i++) {
+    for (const ch of lines[i]) {
+      if (ch === '{') depth++
+      else if (ch === '}') {
+        depth--
+        if (depth === 0) return i
+      }
+    }
+  }
+  return lines.length - 1
+}
+
+function extractFunctionName(signatureChunk) {
+  const flat = signatureChunk
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\{[\s\S]*$/, '')
+    .trim()
+  const matches = [...flat.matchAll(/\b([~]?\w+)\s*\(/g)]
+  if (matches.length === 0) return null
+  return matches[matches.length - 1][1]
+}
+
+function extractFunctionBlocks(lines) {
+  const blocks = []
+  let i = 0
+
+  while (i < lines.length) {
+    let j = i
+    while (j < lines.length && !lines[j].includes('{')) {
+      j++
+    }
+    if (j >= lines.length) break
+
+    const chunk = lines.slice(i, j + 1).join('\n')
+    const beforeBrace = chunk.replace(/\{[\s\S]*$/, '').trim()
+
+    if (!/\)\s*$/.test(beforeBrace.replace(/\s+/g, ' '))) {
+      i = j + 1
+      continue
+    }
+
+    if (/^\s*(if|else\s+if|for|while|switch|catch)\b/i.test(beforeBrace)) {
+      i = j + 1
+      continue
+    }
+
+    const name = extractFunctionName(chunk)
+    if (!name) {
+      i = j + 1
+      continue
+    }
+
+    const endLineIdx = findBraceClose(lines, j)
+    const body = lines.slice(j + 1, endLineIdx).join('\n')
+    const normalized = normalizeFunctionBody(body)
+    let sigStart = i
+    while (sigStart < j && !lines[sigStart].trim()) sigStart++
+
+    blocks.push({
+      name,
+      startLine: sigStart + 1,
+      endLine: endLineIdx + 1,
+      normalized,
+    })
+
+    i = endLineIdx + 1
+  }
+
+  return blocks
+}
+
+function violationsFromDuplicateFunctions(blocks) {
+  const violations = []
+  const byBody = new Map()
+
+  for (const block of blocks) {
+    if (block.normalized.length < 8) continue
+    if (!byBody.has(block.normalized)) byBody.set(block.normalized, [])
+    byBody.get(block.normalized).push(block)
+  }
+
+  for (const group of byBody.values()) {
+    if (group.length < 2) continue
+
+    const names = group.map((block) => `${block.name}()`)
+    const message =
+      names.length === 2
+        ? `${names[0]} and ${names[1]} contain identical code and should be replaced by a single reusable function.`
+        : `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]} contain identical code and should be replaced by a single reusable function.`
+
+    violations.push({
+      rule: 'Copy-Paste',
+      lines: [
+        Math.min(...group.map((block) => block.startLine)),
+        Math.max(...group.map((block) => block.endLine)),
+      ],
+      message,
+    })
+  }
+
+  return violations
 }
 
 /** @returns {Violation[]} */
 export function detectCopyPaste(source) {
-  const violations = []
-  const rawLines = source.split('\n')
-  const entries = []
-
-  for (let i = 0; i < rawLines.length; i++) {
-    if (!isSignificantLine(rawLines[i])) continue
-    entries.push({ rawIndex: i, line: rawLines[i] })
-  }
-
-  const WINDOW = 4
-  if (entries.length < WINDOW * 2) return violations
-
-  const windows = []
-  for (let i = 0; i <= entries.length - WINDOW; i++) {
-    const slice = entries.slice(i, i + WINDOW)
-    const text = slice.map((e) => e.line).join('\n')
-    const normalized = normalizeWindow(text)
-    const startLine = slice[0].rawIndex + 1
-    const endLine = slice[WINDOW - 1].rawIndex + 1
-    windows.push({ normalized, startLine, endLine, startIdx: i })
-  }
-
-  const reported = new Set()
-
-  for (let a = 0; a < windows.length; a++) {
-    for (let b = a + 1; b < windows.length; b++) {
-      if (windows[a].normalized !== windows[b].normalized) continue
-      if (windows[a].normalized.length < 8) continue
-
-      const key = `${windows[a].startLine}-${windows[b].startLine}`
-      if (reported.has(key)) continue
-      reported.add(key)
-
-      violations.push({
-        rule: 'Copy-Paste',
-        lines: [windows[b].startLine, windows[b].endLine],
-        message: `Lines ${windows[b].startLine}–${windows[b].endLine} appear to be a duplicate of lines ${windows[a].startLine}–${windows[a].endLine}.`,
-      })
-    }
-  }
-
-  return violations
+  const lines = source.split('\n')
+  return violationsFromDuplicateFunctions(extractFunctionBlocks(lines))
 }
 
 export const DETECTORS = {

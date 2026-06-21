@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Editor from './Editor.jsx'
 import ViolationPanel from './ViolationPanel.jsx'
 import {
@@ -6,11 +6,12 @@ import {
   buildLineRuleMap,
   runDetectors,
 } from './detectors.js'
-import { FILTER_LABELS, INACTIVE_FILTER, getSmellColor } from './smellColors.js'
+import { FILTER_LABELS, getSmellColor } from './smellColors.js'
 import { groupViolationsForDisplay } from './groupViolations.js'
 import { SAMPLE_CODE, SAMPLE_FILENAME } from './sampleCode.js'
 import RefactorPreview from './RefactorPreview.jsx'
 import { requestRefactor } from './refactorService.js'
+import { THEME_STORAGE_KEY, getInactiveFilter, getInitialTheme } from './theme.js'
 
 function ScanIcon() {
   return (
@@ -44,7 +45,34 @@ function LogoIcon() {
   )
 }
 
+function ThemeIcon({ theme }) {
+  if (theme === 'dark') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+        <path
+          d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M3.4 12.6l.85-.85M11.75 4.25l.85-.85"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M7.2 1.8A6 6 0 1 0 14.2 8.8 4.8 4.8 0 0 1 7.2 1.8Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function App() {
+  const [theme, setTheme] = useState(getInitialTheme)
   const [code, setCode] = useState(SAMPLE_CODE)
   const [activeFilters, setActiveFilters] = useState([...FILTER_OPTIONS])
   const [violations, setViolations] = useState([])
@@ -54,6 +82,16 @@ function App() {
   const [refactoringKey, setRefactoringKey] = useState(null)
   const editorRef = useRef(null)
   const emptyLineMap = useMemo(() => new Map(), [])
+  const inactiveFilter = useMemo(() => getInactiveFilter(theme), [theme])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('theme-light', theme === 'light')
+    localStorage.setItem(THEME_STORAGE_KEY, theme)
+  }, [theme])
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }, [])
 
   const clearScanResults = useCallback(() => {
     setViolations([])
@@ -146,10 +184,21 @@ function App() {
               </p>
             </div>
           </div>
-          <button type="button" className="scan-btn" onClick={handleScan}>
-            <ScanIcon />
-            Scan code
-          </button>
+          <div className="header-actions">
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              <ThemeIcon theme={theme} />
+              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </button>
+            <button type="button" className="scan-btn" onClick={handleScan}>
+              <ScanIcon />
+              Scan code
+            </button>
+          </div>
         </div>
 
         <div className="filter-pills">
@@ -167,15 +216,16 @@ function App() {
                         '--pill-accent': colors.accent,
                         '--pill-bg': colors.pillBg,
                         '--pill-border': colors.accent,
-                        '--pill-text': colors.pillText,
+                        '--pill-text':
+                          theme === 'light' ? '#111827' : colors.pillText,
                         '--pill-dot': colors.dot,
                       }
                     : {
-                        '--pill-accent': INACTIVE_FILTER.accent,
-                        '--pill-bg': INACTIVE_FILTER.bg,
-                        '--pill-border': INACTIVE_FILTER.border,
-                        '--pill-text': INACTIVE_FILTER.text,
-                        '--pill-dot': INACTIVE_FILTER.dot,
+                        '--pill-accent': inactiveFilter.accent,
+                        '--pill-bg': inactiveFilter.bg,
+                        '--pill-border': inactiveFilter.border,
+                        '--pill-text': inactiveFilter.text,
+                        '--pill-dot': inactiveFilter.dot,
                       }
                 }
                 onClick={() => toggleFilter(filter)}
@@ -183,7 +233,7 @@ function App() {
                 <span
                   className="filter-dot"
                   style={{
-                    background: isActive ? colors.dot : INACTIVE_FILTER.dot,
+                    background: isActive ? colors.dot : inactiveFilter.dot,
                   }}
                 />
                 {FILTER_LABELS[filter] ?? filter}
@@ -202,11 +252,13 @@ function App() {
               onChange={handleCodeChange}
               lineRuleMap={hasScanned ? lineRuleMap : emptyLineMap}
               filename={SAMPLE_FILENAME}
+              theme={theme}
             />
 
             <RefactorPreview
               refactorState={refactorState}
               onClose={handleCloseRefactor}
+              theme={theme}
             />
           </div>
         </section>
@@ -216,6 +268,7 @@ function App() {
           onViolationClick={handleViolationClick}
           onRefactor={handleRefactor}
           refactoringKey={refactoringKey}
+          theme={theme}
         />
       </main>
     </div>
