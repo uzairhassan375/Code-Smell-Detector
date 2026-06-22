@@ -243,14 +243,12 @@ function App() {
       <header className="top-bar">
         <div className="top-bar-main">
           <div className="brand">
-            <LogoIcon />
-            <div>
-              <h1 className="app-title">Code smell detector</h1>
-              <p className="app-subtitle">
-                Scan, locate, and fix problematic patterns in your code
-              </p>
-            </div>
-          </div>
+          <img
+            src="/Logo.png"
+            alt="CodeSense Logo"
+            className="app-logo"
+            style={{ height: "120px", width: "auto" }}
+          />        </div>
           <div className="header-actions">
             <input
               ref={fileInputRef}
@@ -359,6 +357,7 @@ function App() {
           onRefactor={handleRefactor}
           refactoringKey={refactoringKey}
           theme={theme}
+          lineCount={code.split('\n').length}
         />
       </main>
     </div>
